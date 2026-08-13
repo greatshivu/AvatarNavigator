@@ -1,0 +1,62 @@
+<div class="avatar-container">
+  <h2>Avatar Interaction</h2>
+  
+  <div class="avatar-section">
+    <div class="avatar-display">
+      <div class="avatar-placeholder">
+        <span class="avatar-emoji">🤖</span>
+      </div>
+      <div class="avatar-status">
+        <p *ngIf="!isListening && !loading">Ready to listen</p>
+        <p *ngIf="isListening" class="listening">Listening...</p>
+        <p *ngIf="loading" class="processing">Processing...</p>
+      </div>
+    </div>
+
+    <div class="voice-controls">
+      <button 
+        (click)="startListening()" 
+        [disabled]="isListening || loading"
+        class="btn-primary"
+      >
+        🎤 Start Listening
+      </button>
+      <button 
+        (click)="stopListening()" 
+        [disabled]="!isListening"
+        class="btn-danger"
+      >
+        ⏹️ Stop Listening
+      </button>
+    </div>
+
+    <div class="command-display" *ngIf="lastCommand">
+      <h3>Last Command:</h3>
+      <p>{{ lastCommand }}</p>
+    </div>
+
+    <div class="response-display" *ngIf="avatarResponse">
+      <h3>Avatar Response:</h3>
+      <p>{{ avatarResponse }}</p>
+    </div>
+  </div>
+
+  <div class="text-synthesis-section">
+    <h3>Text to Speech</h3>
+    <div class="synthesis-controls">
+      <input 
+        type="text" 
+        placeholder="Enter text for avatar to speak..."
+        [(ngModel)]="textToSpeak"
+        (keyup.enter)="synthesizeSpeech()"
+      />
+      <button 
+        (click)="synthesizeSpeech()"
+        [disabled]="!textToSpeak || loading"
+        class="btn-primary"
+      >
+        🔊 Synthesize Speech
+      </button>
+    </div>
+  </div>
+</div>

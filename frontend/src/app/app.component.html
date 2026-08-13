@@ -1,0 +1,19 @@
+<header class="navbar">
+  <div class="container">
+    <h1>{{ title }}</h1>
+    <nav>
+      <a routerLink="">Dashboard</a>
+      <a routerLink="/orders">Orders</a>
+      <a routerLink="/items">Items</a>
+      <a routerLink="/avatar">Avatar</a>
+    </nav>
+  </div>
+</header>
+
+<main class="main-content">
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="footer">
+  <p>&copy; 2024 AvatarNavigator. All rights reserved.</p>
+</footer>

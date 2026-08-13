@@ -1,0 +1,100 @@
+.orders-container {
+  padding: 2rem 0;
+}
+
+.orders-container h2 {
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  color: #333;
+}
+
+.search-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.search-bar button {
+  padding: 0.75rem 1.5rem;
+  background-color: #0366d6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.search-bar button:hover {
+  background-color: #0256b8;
+}
+
+.btn-secondary {
+  background-color: #6c757d !important;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268 !important;
+}
+
+.loading,
+.no-data {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.orders-table {
+  overflow-x: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table thead {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+}
+
+table td {
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-0 { background-color: #fff3cd; color: #856404; }
+.status-1 { background-color: #d1ecf1; color: #0c5460; }
+.status-2 { background-color: #d4edda; color: #155724; }
+.status-3 { background-color: #d4edda; color: #155724; }
+.status-4 { background-color: #f8d7da; color: #721c24; }

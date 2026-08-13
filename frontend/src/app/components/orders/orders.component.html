@@ -1,0 +1,45 @@
+<div class="orders-container">
+  <h2>Orders</h2>
+  
+  <div class="search-bar">
+    <input 
+      type="text" 
+      placeholder="Search by order number or customer name..." 
+      [(ngModel)]="searchTerm"
+      (keyup.enter)="searchOrders()"
+    />
+    <button (click)="searchOrders()">Search</button>
+    <button (click)="loadOrders()" class="btn-secondary">Clear</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading orders...</div>
+
+  <div *ngIf="!loading && orders.length === 0" class="no-data">
+    No orders found.
+  </div>
+
+  <div *ngIf="!loading && orders.length > 0" class="orders-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Order Number</th>
+          <th>Customer</th>
+          <th>Date</th>
+          <th>Total Amount</th>
+          <th>Status</th>
+          <th>Items</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of orders">
+          <td>{{ order.orderNumber }}</td>
+          <td>{{ order.customerName }}</td>
+          <td>{{ order.orderDate | date: 'short' }}</td>
+          <td>${{ order.totalAmount.toFixed(2) }}</td>
+          <td><span class="status" [ngClass]="'status-' + order.status">{{ getStatusLabel(order.status) }}</span></td>
+          <td>{{ order.orderItems.length }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

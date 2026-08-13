@@ -1,0 +1,48 @@
+<div class="items-container">
+  <h2>Items Catalog</h2>
+  
+  <div class="filters">
+    <div class="search-bar">
+      <input 
+        type="text" 
+        placeholder="Search items..." 
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="searchItems()"
+      />
+      <button (click)="searchItems()">Search</button>
+    </div>
+
+    <div class="filter-group">
+      <label>Category:</label>
+      <select [(ngModel)]="selectedCategory" (change)="filterByCategory()">
+        <option value="">All Categories</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading items...</div>
+
+  <div *ngIf="!loading && items.length === 0" class="no-data">
+    No items found.
+  </div>
+
+  <div *ngIf="!loading && items.length > 0" class="items-grid">
+    <div *ngFor="let item of items" class="item-card">
+      <div class="item-image">
+        <img [src]="item.imageUrl || 'https://via.placeholder.com/300'" [alt]="item.name" />
+      </div>
+      <div class="item-content">
+        <h3>{{ item.name }}</h3>
+        <p class="description">{{ item.description }}</p>
+        <div class="item-details">
+          <span class="category">{{ item.category }}</span>
+          <span class="stock" [ngClass]="item.stock > 0 ? 'in-stock' : 'out-stock'">
+            {{ item.stock > 0 ? 'In Stock: ' + item.stock : 'Out of Stock' }}
+          </span>
+        </div>
+        <div class="price">{{ item.price | currency }}</div>
+      </div>
+    </div>
+  </div>
+</div>

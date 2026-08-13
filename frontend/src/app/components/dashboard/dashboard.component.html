@@ -1,0 +1,21 @@
+<div class="dashboard">
+  <h2>Dashboard</h2>
+  <div class="stats">
+    <div class="stat-card">
+      <h3>Total Orders</h3>
+      <p class="stat-value">{{ totalOrders }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Total Revenue</h3>
+      <p class="stat-value">${{ totalRevenue.toFixed(2) }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Pending Orders</h3>
+      <p class="stat-value">{{ pendingOrders }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Shipped Orders</h3>
+      <p class="stat-value">{{ shippedOrders }}</p>
+    </div>
+  </div>
+</div>
