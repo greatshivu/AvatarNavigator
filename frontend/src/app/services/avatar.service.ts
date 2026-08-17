@@ -10,6 +10,10 @@ export class AvatarService {
 
   constructor(private http: HttpClient) { }
 
+  getLiveAvatarConfig(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/live-config`);
+  }
+
   processVoiceCommand(audioFile: File): Observable<any> {
     const formData = new FormData();
     formData.append('audioFile', audioFile);

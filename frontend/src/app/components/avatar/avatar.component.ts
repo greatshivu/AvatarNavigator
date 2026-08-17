@@ -19,17 +19,43 @@ export class AvatarComponent implements OnInit {
   isRecording = false;
   mediaRecorder: MediaRecorder | null = null;
   audioChunks: Blob[] = [];
+  liveAvatarName = 'Lisa';
+  liveAvatarStatus = 'Initializing Live Azure Avatar';
+  liveAvatarReady = false;
+  liveAvatarUrl = '';
+  statusMessage = '';
 
   constructor(private avatarService: AvatarService) { }
 
   ngOnInit(): void {
     this.checkAvatarService();
+    this.loadLiveAvatarConfig();
+  }
+
+  loadLiveAvatarConfig(): void {
+    this.avatarService.getLiveAvatarConfig().subscribe({
+      next: (response) => {
+        this.liveAvatarName = response.avatarName || 'Lisa';
+        this.liveAvatarReady = !!response.enabled;
+        this.liveAvatarUrl = response.liveAvatarVideoUrl || '';
+        this.statusMessage = response.message || 'Azure Live Avatar is not configured yet.';
+        this.liveAvatarStatus = this.liveAvatarReady
+          ? `${this.liveAvatarName} is live and ready`
+          : 'Waiting for Azure Speech Live Avatar configuration';
+      },
+      error: (err) => {
+        console.error('Unable to load live avatar configuration:', err);
+        this.liveAvatarStatus = 'Live Avatar configuration unavailable';
+        this.statusMessage = 'Add Azure Speech Live Avatar settings to enable the live human avatar.';
+      }
+    });
   }
 
   checkAvatarService(): void {
     this.avatarService.healthCheck().subscribe({
       next: (response) => {
         console.log('Avatar service is running:', response);
+        this.statusMessage = response.message || this.statusMessage;
       },
       error: (err) => {
         console.error('Avatar service error:', err);

@@ -3,10 +3,22 @@ using Microsoft.CognitiveServices.Speech.Audio;
 
 namespace AvatarNavigator.API.Services
 {
+    public class LiveAvatarSettings
+    {
+        public bool Enabled { get; set; }
+        public string AvatarName { get; set; } = "Lisa";
+        public string VoiceName { get; set; } = "en-US-JennyNeural";
+        public string Region { get; set; } = "eastus";
+        public string? LiveAvatarEndpoint { get; set; }
+        public string? LiveAvatarVideoUrl { get; set; }
+        public string? Message { get; set; }
+    }
+
     public interface IAvatarService
     {
         Task<string> ProcessVoiceCommandAsync(string audioPath);
         Task<string> SynthesizeSpeechAsync(string text);
+        Task<LiveAvatarSettings> GetLiveAvatarConfigAsync();
     }
 
     public class AvatarService : IAvatarService
@@ -18,8 +30,39 @@ namespace AvatarNavigator.API.Services
             _configuration = configuration;
         }
 
+        public Task<LiveAvatarSettings> GetLiveAvatarConfigAsync()
+        {
+            var enabled = _configuration.GetValue<bool>("AzureAvatar:UseLiveAvatar") ||
+                          !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:LiveAvatarEndpoint"]) ||
+                          !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:LiveAvatarVideoUrl"]);
+
+            var settings = new LiveAvatarSettings
+            {
+                Enabled = enabled,
+                AvatarName = _configuration["AzureAvatar:AvatarName"] ?? "Lisa",
+                VoiceName = _configuration["AzureAvatar:VoiceName"] ?? "en-US-JennyNeural",
+                Region = _configuration["AzureAvatar:Region"] ?? "eastus",
+                LiveAvatarEndpoint = _configuration["AzureAvatar:LiveAvatarEndpoint"],
+                LiveAvatarVideoUrl = _configuration["AzureAvatar:LiveAvatarVideoUrl"],
+                Message = enabled
+                    ? "Live Azure Avatar is configured for Lisa."
+                    : "Azure Speech Live Avatar is not configured yet. Add the Live Avatar endpoint and stream URL in appsettings.json."
+            };
+
+            return Task.FromResult(settings);
+        }
+
+        private bool HasSpeechCredentials() =>
+            !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:SubscriptionKey"]) &&
+            !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:Region"]);
+
         public async Task<string> ProcessVoiceCommandAsync(string audioPath)
         {
+            if (!HasSpeechCredentials())
+            {
+                return "Azure Speech credentials are not configured. Add the Azure Speech subscription key and region before using live voice recognition.";
+            }
+
             try
             {
                 var config = SpeechConfig.FromSubscription(
@@ -32,7 +75,7 @@ namespace AvatarNavigator.API.Services
                 using (var recognizer = new SpeechRecognizer(config, audioConfig))
                 {
                     var result = await recognizer.RecognizeOnceAsync();
-                    
+
                     if (result.Reason == ResultReason.RecognizedSpeech)
                     {
                         return result.Text;
@@ -55,6 +98,11 @@ namespace AvatarNavigator.API.Services
 
         public async Task<string> SynthesizeSpeechAsync(string text)
         {
+            if (!HasSpeechCredentials())
+            {
+                return "Azure Speech credentials are not configured. Add the Azure Speech subscription key and region before using voice synthesis.";
+            }
+
             try
             {
                 var config = SpeechConfig.FromSubscription(
@@ -67,7 +115,7 @@ namespace AvatarNavigator.API.Services
                 using (var synthesizer = new SpeechSynthesizer(config, audioConfig))
                 {
                     var result = await synthesizer.SpeakTextAsync(text);
-                    
+
                     if (result.Reason == ResultReason.SynthesizingAudioCompleted)
                     {
                         return "Speech synthesized successfully.";

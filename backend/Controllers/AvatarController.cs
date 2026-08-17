@@ -16,6 +16,13 @@ namespace AvatarNavigator.API.Controllers
             _logger = logger;
         }
 
+        [HttpGet("live-config")]
+        public async Task<IActionResult> GetLiveConfig()
+        {
+            var config = await _avatarService.GetLiveAvatarConfigAsync();
+            return Ok(config);
+        }
+
         [HttpPost("voice-command")]
         public async Task<ActionResult<string>> ProcessVoiceCommand([FromForm] IFormFile audioFile)
         {
@@ -51,9 +58,17 @@ namespace AvatarNavigator.API.Controllers
         }
 
         [HttpGet("health")]
-        public IActionResult HealthCheck()
+        public async Task<IActionResult> HealthCheck()
         {
-            return Ok(new { status = "Avatar service is running" });
+            var liveConfig = await _avatarService.GetLiveAvatarConfigAsync();
+            return Ok(new
+            {
+                status = "Avatar service is running",
+                liveAvatarConfigured = liveConfig.Enabled,
+                avatarName = liveConfig.AvatarName,
+                voiceName = liveConfig.VoiceName,
+                message = liveConfig.Message
+            });
         }
     }
 

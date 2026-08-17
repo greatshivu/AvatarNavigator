@@ -1,28 +1,51 @@
 <div class="avatar-container">
-  <h2>Avatar Interaction</h2>
-  
+  <h2>Azure Live Avatar</h2>
+
   <div class="avatar-section">
     <div class="avatar-display">
-      <div class="avatar-placeholder">
-        <span class="avatar-emoji">🤖</span>
+      <div class="avatar-stage" [class.live-ready]="liveAvatarReady">
+        <video
+          *ngIf="liveAvatarReady && liveAvatarUrl"
+          [src]="liveAvatarUrl"
+          autoplay
+          muted
+          loop
+          playsinline
+          class="avatar-video"
+        ></video>
+
+        <div *ngIf="!liveAvatarReady || !liveAvatarUrl" class="avatar-placeholder">
+          <div class="avatar-glow"></div>
+          <div class="avatar-face">
+            <span class="avatar-eye left"></span>
+            <span class="avatar-eye right"></span>
+            <span class="avatar-mouth"></span>
+          </div>
+        </div>
       </div>
+
       <div class="avatar-status">
-        <p *ngIf="!isListening && !loading">Ready to listen</p>
+        <p class="avatar-name">{{ liveAvatarName }}</p>
+        <p *ngIf="!isListening && !loading" class="idle">{{ liveAvatarStatus }}</p>
         <p *ngIf="isListening" class="listening">Listening...</p>
         <p *ngIf="loading" class="processing">Processing...</p>
       </div>
     </div>
 
+    <div class="status-banner" *ngIf="statusMessage">
+      {{ statusMessage }}
+    </div>
+
     <div class="voice-controls">
-      <button 
-        (click)="startListening()" 
+      <button
+        (click)="startListening()"
         [disabled]="isListening || loading"
         class="btn-primary"
       >
         🎤 Start Listening
       </button>
-      <button 
-        (click)="stopListening()" 
+      <button
+        (click)="stopListening()"
         [disabled]="!isListening"
         class="btn-danger"
       >
@@ -44,13 +67,13 @@
   <div class="text-synthesis-section">
     <h3>Text to Speech</h3>
     <div class="synthesis-controls">
-      <input 
-        type="text" 
-        placeholder="Enter text for avatar to speak..."
+      <input
+        type="text"
+        placeholder="Enter text for Lisa to speak..."
         [(ngModel)]="textToSpeak"
         (keyup.enter)="synthesizeSpeech()"
       />
-      <button 
+      <button
         (click)="synthesizeSpeech()"
         [disabled]="!textToSpeak || loading"
         class="btn-primary"
