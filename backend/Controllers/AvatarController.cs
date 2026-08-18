@@ -8,11 +8,13 @@ namespace AvatarNavigator.API.Controllers
     public class AvatarController : ControllerBase
     {
         private readonly IAvatarService _avatarService;
+        private readonly IAgentService _agentService;
         private readonly ILogger<AvatarController> _logger;
 
-        public AvatarController(IAvatarService avatarService, ILogger<AvatarController> logger)
+        public AvatarController(IAvatarService avatarService, IAgentService agentService, ILogger<AvatarController> logger)
         {
             _avatarService = avatarService;
+            _agentService = agentService;
             _logger = logger;
         }
 
@@ -57,10 +59,41 @@ namespace AvatarNavigator.API.Controllers
             return Ok(new { result });
         }
 
+        [HttpGet("avatars")]
+        public async Task<ActionResult<List<AvatarInfo>>> GetAvatarList()
+        {
+            var avatars = await _agentService.GetAvatarListAsync();
+            return Ok(avatars);
+        }
+
+        [HttpPost("agent/process-request")]
+        public async Task<ActionResult<AgentResponse>> ProcessAgentRequest([FromBody] AgentRequest request)
+        {
+            if (string.IsNullOrEmpty(request.UserRequest))
+                return BadRequest("User request is required.");
+
+            var response = await _agentService.ProcessUserRequestAsync(request.UserRequest, request.SelectedAvatarId);
+            return Ok(response);
+        }
+
+        [HttpGet("agent/config")]
+        public async Task<ActionResult<AgentConfig>> GetAgentConfig()
+        {
+            var isConfigured = await _agentService.IsConfiguredAsync();
+            if (!isConfigured)
+                return NotFound(new { message = "Agent is not configured" });
+
+            var config = await _agentService.GetConfigAsync();
+            return Ok(config);
+        }
+
         [HttpGet("health")]
         public async Task<IActionResult> HealthCheck()
         {
             var liveConfig = await _avatarService.GetLiveAvatarConfigAsync();
+            var agentConfigured = await _agentService.IsConfiguredAsync();
+            var avatars = await _agentService.GetAvatarListAsync();
+
             return Ok(new
             {
                 status = "Avatar service is running",
@@ -70,7 +103,9 @@ namespace AvatarNavigator.API.Controllers
                 avatarName = liveConfig.AvatarName,
                 voiceName = liveConfig.VoiceName,
                 message = liveConfig.Message,
-                warning = liveConfig.Warning
+                warning = liveConfig.Warning,
+                agentConfigured = agentConfigured,
+                availableAvatars = avatars.Count
             });
         }
     }
@@ -78,5 +113,11 @@ namespace AvatarNavigator.API.Controllers
     public class SpeechRequest
     {
         public string Text { get; set; } = string.Empty;
+    }
+
+    public class AgentRequest
+    {
+        public string UserRequest { get; set; } = string.Empty;
+        public string? SelectedAvatarId { get; set; }
     }
 }

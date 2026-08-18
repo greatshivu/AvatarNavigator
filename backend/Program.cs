@@ -20,9 +20,11 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpClient();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IAvatarService, AvatarService>();
+builder.Services.AddScoped<IAgentService, AgentService>();
 
 var app = builder.Build();
 
