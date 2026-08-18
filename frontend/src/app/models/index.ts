@@ -48,9 +48,14 @@ export interface ItemFilter {
 }
 
 export interface FilterCriteria {
+  searchText?: string;
   category?: string;
   brand?: string;
   color?: string;
+  size?: string;
+  inStockOnly?: boolean;
   minPrice?: number;
   maxPrice?: number;
+  startDate?: string;
+  endDate?: string;
 }

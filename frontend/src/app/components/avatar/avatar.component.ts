@@ -67,16 +67,18 @@ export class AvatarComponent implements OnInit {
     try {
       this.isRecording = true;
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.mediaRecorder = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      this.mediaRecorder = new MediaRecorder(stream, { mimeType });
       this.audioChunks = [];
 
       this.mediaRecorder.ondataavailable = (event: BlobEvent) => {
         this.audioChunks.push(event.data);
       };
 
-      this.mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-        const audioFile = new File([audioBlob], 'voice-command.wav', { type: 'audio/wav' });
+      this.mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+        const wavBlob = await this.convertBlobToWav(audioBlob);
+        const audioFile = new File([wavBlob], 'voice-command.wav', { type: 'audio/wav' });
         this.processVoiceCommand(audioFile);
         this.isRecording = false;
       };
@@ -86,6 +88,58 @@ export class AvatarComponent implements OnInit {
     } catch (error) {
       console.error('Error accessing microphone:', error);
       this.isRecording = false;
+    }
+  }
+
+  private async convertBlobToWav(blob: Blob): Promise<Blob> {
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioContext = new AudioContext();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+    const wavBuffer = this.audioBufferToWav(audioBuffer);
+    audioContext.close();
+    return new Blob([wavBuffer], { type: 'audio/wav' });
+  }
+
+  private audioBufferToWav(audioBuffer: AudioBuffer): ArrayBuffer {
+    const numberOfChannels = audioBuffer.numberOfChannels;
+    const length = audioBuffer.length * numberOfChannels * 2 + 44;
+    const buffer = new ArrayBuffer(length);
+    const view = new DataView(buffer);
+
+    const channels: Float32Array[] = [];
+    for (let i = 0; i < numberOfChannels; i++) {
+      channels.push(audioBuffer.getChannelData(i));
+    }
+
+    this.writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + audioBuffer.length * numberOfChannels * 2, true);
+    this.writeString(view, 8, 'WAVE');
+    this.writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numberOfChannels, true);
+    view.setUint32(24, audioBuffer.sampleRate, true);
+    view.setUint32(28, audioBuffer.sampleRate * numberOfChannels * 2, true);
+    view.setUint16(32, numberOfChannels * 2, true);
+    view.setUint16(34, 16, true);
+    this.writeString(view, 36, 'data');
+    view.setUint32(40, audioBuffer.length * numberOfChannels * 2, true);
+
+    let offset = 44;
+    for (let i = 0; i < audioBuffer.length; i++) {
+      for (let channel = 0; channel < numberOfChannels; channel++) {
+        const sample = Math.max(-1, Math.min(1, channels[channel][i]));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+        offset += 2;
+      }
+    }
+
+    return buffer;
+  }
+
+  private writeString(view: DataView, offset: number, text: string): void {
+    for (let i = 0; i < text.length; i++) {
+      view.setUint8(offset + i, text.charCodeAt(i));
     }
   }
 

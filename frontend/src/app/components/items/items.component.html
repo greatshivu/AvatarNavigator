@@ -1,23 +1,80 @@
 <div class="items-container">
   <h2>Items Catalog</h2>
-  
-  <div class="filters">
-    <div class="search-bar">
-      <input 
-        type="text" 
-        placeholder="Search items..." 
+
+  <div class="filters-panel">
+    <div class="filter-row search-row">
+      <label class="field-label">Text Search</label>
+      <input
+        type="text"
+        placeholder="Search by name, description or category..."
         [(ngModel)]="searchTerm"
         (keyup.enter)="searchItems()"
       />
-      <button (click)="searchItems()">Search</button>
+      <button class="btn-primary" (click)="searchItems()">Search</button>
+      <button class="btn-secondary" (click)="clearFilters()">Clear</button>
     </div>
 
-    <div class="filter-group">
-      <label>Category:</label>
-      <select [(ngModel)]="selectedCategory" (change)="filterByCategory()">
-        <option value="">All Categories</option>
-        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
-      </select>
+    <div class="filter-row advanced-row">
+      <div class="field-group">
+        <label class="field-label">Category</label>
+        <select [(ngModel)]="selectedCategory" (change)="filterByCategory()">
+          <option value="">All Categories</option>
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Brand</label>
+        <select [(ngModel)]="selectedBrand" (change)="applyAdvancedFilter()">
+          <option value="">All Brands</option>
+          <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Color</label>
+        <select [(ngModel)]="selectedColor" (change)="applyAdvancedFilter()">
+          <option value="">All Colors</option>
+          <option *ngFor="let color of colors" [value]="color">{{ color }}</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Size</label>
+        <select [(ngModel)]="selectedSize" (change)="applyAdvancedFilter()">
+          <option value="">All Sizes</option>
+          <option *ngFor="let size of sizes" [value]="size">{{ size }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-row checkbox-row">
+      <label class="checkbox-group">
+        <input type="checkbox" [(ngModel)]="inStockOnly" (change)="applyAdvancedFilter()" />
+        In stock only
+      </label>
+    </div>
+
+    <div class="filter-row range-row">
+      <div class="field-group">
+        <label class="field-label">Min Price</label>
+        <input type="number" [(ngModel)]="minPrice" (ngModelChange)="applyAdvancedFilter()" placeholder="0" min="0" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Max Price</label>
+        <input type="number" [(ngModel)]="maxPrice" (ngModelChange)="applyAdvancedFilter()" placeholder="1000" min="0" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">From Date</label>
+        <input type="date" [(ngModel)]="startDate" (change)="applyAdvancedFilter()" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">To Date</label>
+        <input type="date" [(ngModel)]="endDate" (change)="applyAdvancedFilter()" />
+      </div>
     </div>
   </div>
 
@@ -40,6 +97,11 @@
           <span class="stock" [ngClass]="item.stock > 0 ? 'in-stock' : 'out-stock'">
             {{ item.stock > 0 ? 'In Stock: ' + item.stock : 'Out of Stock' }}
           </span>
+        </div>
+        <div class="meta-row">
+          <span *ngIf="item.filter?.brand">Brand: {{ item.filter?.brand }}</span>
+          <span *ngIf="item.filter?.color">Color: {{ item.filter?.color }}</span>
+          <span *ngIf="item.filter?.size">Size: {{ item.filter?.size }}</span>
         </div>
         <div class="price">{{ item.price | currency }}</div>
       </div>

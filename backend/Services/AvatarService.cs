@@ -63,6 +63,11 @@ namespace AvatarNavigator.API.Services
                 return "Azure Speech credentials are not configured. Add the Azure Speech subscription key and region before using live voice recognition.";
             }
 
+            if (!System.IO.File.Exists(audioPath))
+            {
+                return "Audio file was not created correctly.";
+            }
+
             try
             {
                 var config = SpeechConfig.FromSubscription(
@@ -71,6 +76,7 @@ namespace AvatarNavigator.API.Services
                 );
                 config.SpeechRecognitionLanguage = "en-US";
 
+                // Use a real WAV file. The browser must send PCM WAV data; otherwise Azure Speech may reject the header.
                 using (var audioConfig = AudioConfig.FromWavFileInput(audioPath))
                 using (var recognizer = new SpeechRecognizer(config, audioConfig))
                 {
@@ -86,13 +92,13 @@ namespace AvatarNavigator.API.Services
                     }
                     else
                     {
-                        return "Error processing audio.";
+                        return $"Speech recognition failed: {result.Reason}. Check the audio format and Azure Speech configuration.";
                     }
                 }
             }
             catch (Exception ex)
             {
-                return $"Error: {ex.Message}";
+                return $"Error: {ex.Message}. This usually means invalid WAV audio or incorrect Azure Speech credentials.";
             }
         }
 

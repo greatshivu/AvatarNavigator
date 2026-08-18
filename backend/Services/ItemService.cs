@@ -41,14 +41,25 @@ namespace AvatarNavigator.API.Services
 
         public async Task<IEnumerable<Item>> SearchItemsAsync(string searchTerm)
         {
+            searchTerm = searchTerm.Trim();
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                return await GetAllItemsAsync();
+            }
+
             return await _context.Items
-                .Where(i => i.Name.Contains(searchTerm) || i.Description.Contains(searchTerm))
+                .Where(i => i.Name.Contains(searchTerm) || i.Description.Contains(searchTerm) || i.Category.Contains(searchTerm))
                 .Include(i => i.Filter)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Item>> GetItemsByCategoryAsync(string category)
         {
+            if (string.IsNullOrWhiteSpace(category))
+            {
+                return await GetAllItemsAsync();
+            }
+
             return await _context.Items
                 .Where(i => i.Category == category)
                 .Include(i => i.Filter)
@@ -59,22 +70,51 @@ namespace AvatarNavigator.API.Services
         {
             var query = _context.Items.Include(i => i.Filter).AsQueryable();
 
-            if (!string.IsNullOrEmpty(criteria.Category))
+            if (!string.IsNullOrWhiteSpace(criteria.SearchText))
+            {
+                var term = criteria.SearchText.Trim();
+                query = query.Where(i =>
+                    i.Name.Contains(term) ||
+                    i.Description.Contains(term) ||
+                    i.Category.Contains(term));
+            }
+
+            if (!string.IsNullOrWhiteSpace(criteria.Category))
                 query = query.Where(i => i.Category == criteria.Category);
 
-            if (!string.IsNullOrEmpty(criteria.Brand))
+            if (!string.IsNullOrWhiteSpace(criteria.Brand))
                 query = query.Where(i => i.Filter != null && i.Filter.Brand == criteria.Brand);
 
-            if (!string.IsNullOrEmpty(criteria.Color))
+            if (!string.IsNullOrWhiteSpace(criteria.Color))
                 query = query.Where(i => i.Filter != null && i.Filter.Color == criteria.Color);
 
+            if (!string.IsNullOrWhiteSpace(criteria.Size))
+                query = query.Where(i => i.Filter != null && i.Filter.Size == criteria.Size);
+
+            if (criteria.InStockOnly == true)
+                query = query.Where(i => i.Stock > 0);
+
             if (criteria.MinPrice.HasValue)
-                query = query.Where(i => i.Price >= criteria.MinPrice);
+                query = query.Where(i => i.Price >= criteria.MinPrice.Value);
 
             if (criteria.MaxPrice.HasValue)
-                query = query.Where(i => i.Price <= criteria.MaxPrice);
+                query = query.Where(i => i.Price <= criteria.MaxPrice.Value);
 
-            return await query.ToListAsync();
+            if (!string.IsNullOrWhiteSpace(criteria.StartDate))
+            {
+                var startDate = DateTime.Parse(criteria.StartDate);
+                query = query.Where(i => i.CreatedAt >= startDate);
+            }
+
+            if (!string.IsNullOrWhiteSpace(criteria.EndDate))
+            {
+                var endDate = DateTime.Parse(criteria.EndDate).Date.AddDays(1).AddTicks(-1);
+                query = query.Where(i => i.CreatedAt <= endDate);
+            }
+
+            return await query
+                .OrderBy(i => i.Id)
+                .ToListAsync();
         }
 
         public async Task<Item> CreateItemAsync(Item item)
@@ -105,10 +145,15 @@ namespace AvatarNavigator.API.Services
 
     public class FilterCriteria
     {
+        public string? SearchText { get; set; }
         public string? Category { get; set; }
         public string? Brand { get; set; }
         public string? Color { get; set; }
+        public string? Size { get; set; }
+        public bool? InStockOnly { get; set; }
         public decimal? MinPrice { get; set; }
         public decimal? MaxPrice { get; set; }
+        public string? StartDate { get; set; }
+        public string? EndDate { get; set; }
     }
 }
