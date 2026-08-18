@@ -6,12 +6,15 @@ namespace AvatarNavigator.API.Services
     public class LiveAvatarSettings
     {
         public bool Enabled { get; set; }
+        public bool SpeechConfigured { get; set; }
+        public bool LiveAvatarConfigured { get; set; }
         public string AvatarName { get; set; } = "Lisa";
         public string VoiceName { get; set; } = "en-US-JennyNeural";
         public string Region { get; set; } = "eastus";
         public string? LiveAvatarEndpoint { get; set; }
         public string? LiveAvatarVideoUrl { get; set; }
         public string? Message { get; set; }
+        public string? Warning { get; set; }
     }
 
     public interface IAvatarService
@@ -32,13 +35,34 @@ namespace AvatarNavigator.API.Services
 
         public Task<LiveAvatarSettings> GetLiveAvatarConfigAsync()
         {
-            var enabled = _configuration.GetValue<bool>("AzureAvatar:UseLiveAvatar") ||
-                          !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:LiveAvatarEndpoint"]) ||
-                          !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:LiveAvatarVideoUrl"]);
+            var speechConfigured = !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:SubscriptionKey"]) &&
+                                   !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:Region"]);
+
+            var endpointConfigured = !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:LiveAvatarEndpoint"]);
+            var videoConfigured = !string.IsNullOrWhiteSpace(_configuration["AzureAvatar:LiveAvatarVideoUrl"]);
+            var useLiveAvatar = _configuration.GetValue<bool>("AzureAvatar:UseLiveAvatar");
+
+            var enabled = useLiveAvatar || endpointConfigured || videoConfigured;
+
+            var warningParts = new List<string>();
+            if (!speechConfigured)
+            {
+                warningParts.Add("Speech key/region are missing.");
+            }
+            if (!endpointConfigured)
+            {
+                warningParts.Add("LiveAvatarEndpoint is missing.");
+            }
+            if (!videoConfigured)
+            {
+                warningParts.Add("LiveAvatarVideoUrl is missing.");
+            }
 
             var settings = new LiveAvatarSettings
             {
                 Enabled = enabled,
+                SpeechConfigured = speechConfigured,
+                LiveAvatarConfigured = endpointConfigured || videoConfigured || useLiveAvatar,
                 AvatarName = _configuration["AzureAvatar:AvatarName"] ?? "Lisa",
                 VoiceName = _configuration["AzureAvatar:VoiceName"] ?? "en-US-JennyNeural",
                 Region = _configuration["AzureAvatar:Region"] ?? "eastus",
@@ -46,7 +70,8 @@ namespace AvatarNavigator.API.Services
                 LiveAvatarVideoUrl = _configuration["AzureAvatar:LiveAvatarVideoUrl"],
                 Message = enabled
                     ? "Live Azure Avatar is configured for Lisa."
-                    : "Azure Speech Live Avatar is not configured yet. Add the Live Avatar endpoint and stream URL in appsettings.json."
+                    : "Azure Speech Live Avatar is not configured yet. Add the Live Avatar endpoint and stream URL in appsettings.json.",
+                Warning = warningParts.Count > 0 ? string.Join(" ", warningParts) : null
             };
 
             return Task.FromResult(settings);

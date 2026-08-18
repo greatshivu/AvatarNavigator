@@ -65,9 +65,12 @@ namespace AvatarNavigator.API.Controllers
             {
                 status = "Avatar service is running",
                 liveAvatarConfigured = liveConfig.Enabled,
+                speechConfigured = liveConfig.SpeechConfigured,
+                liveAvatarEndpointConfigured = liveConfig.LiveAvatarConfigured,
                 avatarName = liveConfig.AvatarName,
                 voiceName = liveConfig.VoiceName,
-                message = liveConfig.Message
+                message = liveConfig.Message,
+                warning = liveConfig.Warning
             });
         }
     }

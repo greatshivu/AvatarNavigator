@@ -15,21 +15,35 @@ export class AvatarComponent implements OnInit {
   lastCommand = '';
   avatarResponse = '';
   loading = false;
-  textToSpeak = '';
   isRecording = false;
   mediaRecorder: MediaRecorder | null = null;
   audioChunks: Blob[] = [];
+  avatarEnabled = false;
   liveAvatarName = 'Lisa';
-  liveAvatarStatus = 'Initializing Live Azure Avatar';
+  liveAvatarStatus = 'Azure avatar idle';
   liveAvatarReady = false;
   liveAvatarUrl = '';
   statusMessage = '';
+  private autoListenTimer: any = null;
 
   constructor(private avatarService: AvatarService) { }
 
   ngOnInit(): void {
     this.checkAvatarService();
     this.loadLiveAvatarConfig();
+  }
+
+  toggleAvatar(): void {
+    this.avatarEnabled = !this.avatarEnabled;
+
+    if (this.avatarEnabled) {
+      this.liveAvatarStatus = 'Listening and responding';
+      this.startContinuousListening();
+      return;
+    }
+
+    this.liveAvatarStatus = 'Avatar disabled';
+    this.stopContinuousListening();
   }
 
   loadLiveAvatarConfig(): void {
@@ -42,6 +56,7 @@ export class AvatarComponent implements OnInit {
         this.liveAvatarStatus = this.liveAvatarReady
           ? `${this.liveAvatarName} is live and ready`
           : 'Waiting for Azure Speech Live Avatar configuration';
+        console.log('Avatar config loaded:', response);
       },
       error: (err) => {
         console.error('Unable to load live avatar configuration:', err);
@@ -63,10 +78,41 @@ export class AvatarComponent implements OnInit {
     });
   }
 
+  private startContinuousListening(): void {
+    if (!this.avatarEnabled) {
+      return;
+    }
+
+    this.startListening().then(() => {
+      if (this.avatarEnabled) {
+        this.autoListenTimer = setTimeout(() => {
+          if (this.avatarEnabled) {
+            this.startContinuousListening();
+          }
+        }, 1500);
+      }
+    });
+  }
+
+  private stopContinuousListening(): void {
+    if (this.autoListenTimer) {
+      clearTimeout(this.autoListenTimer);
+      this.autoListenTimer = null;
+    }
+    this.stopListening();
+  }
+
   async startListening(): Promise<void> {
     try {
-      this.isRecording = true;
+      if (!this.avatarEnabled) {
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.isRecording = true;
+      this.isListening = true;
+      this.liveAvatarStatus = 'Listening for command';
+
       const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
       this.mediaRecorder = new MediaRecorder(stream, { mimeType });
       this.audioChunks = [];
@@ -81,13 +127,19 @@ export class AvatarComponent implements OnInit {
         const audioFile = new File([wavBlob], 'voice-command.wav', { type: 'audio/wav' });
         this.processVoiceCommand(audioFile);
         this.isRecording = false;
+        this.isListening = false;
+
+        if (this.avatarEnabled && this.mediaRecorder) {
+          this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
       };
 
       this.mediaRecorder.start();
-      this.isListening = true;
     } catch (error) {
       console.error('Error accessing microphone:', error);
       this.isRecording = false;
+      this.isListening = false;
+      this.liveAvatarStatus = 'Microphone unavailable';
     }
   }
 
@@ -144,43 +196,31 @@ export class AvatarComponent implements OnInit {
   }
 
   stopListening(): void {
-    if (this.mediaRecorder) {
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
     }
     this.isListening = false;
+    this.isRecording = false;
   }
 
   processVoiceCommand(audioFile: File): void {
     this.loading = true;
+    this.liveAvatarStatus = 'Processing request';
+
     this.avatarService.processVoiceCommand(audioFile).subscribe({
       next: (response) => {
         this.lastCommand = response.command;
         this.avatarResponse = `Command received: ${response.command}`;
+        console.log('Avatar command response:', response);
         this.loading = false;
+        this.liveAvatarStatus = this.avatarEnabled ? 'Listening and responding' : 'Avatar disabled';
       },
       error: (err) => {
         console.error('Error processing voice command:', err);
         this.avatarResponse = 'Error processing voice command. Please try again.';
+        console.log('Voice command error details:', err);
         this.loading = false;
-      }
-    });
-  }
-
-  synthesizeSpeech(): void {
-    if (!this.textToSpeak) {
-      alert('Please enter text to synthesize');
-      return;
-    }
-    this.loading = true;
-    this.avatarService.synthesizeSpeech(this.textToSpeak).subscribe({
-      next: (response) => {
-        this.avatarResponse = response.result;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Error synthesizing speech:', err);
-        this.avatarResponse = 'Error synthesizing speech. Please try again.';
-        this.loading = false;
+        this.liveAvatarStatus = this.avatarEnabled ? 'Waiting for input' : 'Avatar disabled';
       }
     });
   }
